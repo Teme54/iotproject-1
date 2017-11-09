@@ -20,6 +20,7 @@ die("ERROR: " . $e->getMessage());
 }
 echo "Yhteys muodostettu";
 echo "<br>" . "<br>";
+echo "jeejee";
 // virheenkäsittely: virheet aiheuttavat poikkeuksen
 $yhteys->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 // merkistö: käytetään latin1merkistöä;
