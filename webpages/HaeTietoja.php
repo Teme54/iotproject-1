@@ -9,31 +9,34 @@
 
 // muodostetaan yhteys tietokantaan
 try {
-$yhteys = new PDO("mysql:host=139.59.155.145;dbname=locatiot", "locatiot",
-"raspberry");
+$username = $_POST['usernameLogin'];
+$password = $_POST['passwordLogin'];
+
+$yhteys = new PDO("mysql:host=139.59.155.145;dbname=locatiot", $username,
+$password);
 }
 catch (PDOException $e) {
 die("ERROR: " . $e->getMessage());
 }
+echo "Yhteys muodostettu";
+echo "<br>" . "<br>";
 // virheenkäsittely: virheet aiheuttavat poikkeuksen
 $yhteys->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 // merkistö: käytetään latin1merkistöä;
 //toinen yleinen vaihtoehto on utf8.
 $yhteys->exec("SET NAMES latin1");
 // valmistetaan kysely
-$kysely = $yhteys->prepare("SELECT * FROM locatiot");
-// suoritetaan kysely
-$kysely->execute();
+$kysely = $yhteys->query("SELECT * FROM locatiot")->fetchAll();
 
-echo "<table>";
-// käsitellään tulostaulun rivit yksi kerrallaan
-while ($rivi = $kysely->fetchAll(PDO::FETCH_COLUMN)) {
-echo "<tr>";
-echo "<td>" . htmlspecialchars($rivi["ID"]) . "</td>";
-echo "<td>" . htmlspecialchars($rivi["Latitude"]) . "</td>";
-echo "<td>" . htmlspecialchars($rivi["Longitude"]) . "</td>";
-echo "<td>" . htmlspecialchars($rivi["Timestamp"]) . "</td>";
-echo "</tr>";
+foreach($kysely as $results) {
+  echo $results['ID'];
+  echo " ";
+  echo $results['latitude'];
+  echo " ";
+  echo $results['longitude'];
+  echo " ";
+  echo $results['timestamp'];
+  echo "<br>";
 }
-echo "</table>";
+
 ?>

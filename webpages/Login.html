@@ -1,0 +1,15 @@
+<html>
+<div id="login">
+  <h3>Login</h3>
+  <form method="post" action="HaeTietoja.php" name="login">
+    <label>Username</label>
+    <input type="text" name="usernamelogin" autocomplete="off"/>
+    <label>Password</label>
+    <input type="password" name="passwordLogin" autocomplete="off"/>
+    <div class="errorMsg">
+      <?php echo $errorMsgLogin ?>
+    </div>
+      <input type="submit" class="button" name="loginSubmit" value="Login">
+    </form>
+</div>
+</html>
