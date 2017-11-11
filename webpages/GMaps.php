@@ -8,7 +8,7 @@
 
 <!--Creates a HTML division for the Google Map -->
 
-<div id="googleMap" style="width:50%;height:400px;"></div>
+<div id="googleMap" style="width:100%;height:400px;"></div>
 
 <!-- Create a function to set the maps properties -->
 

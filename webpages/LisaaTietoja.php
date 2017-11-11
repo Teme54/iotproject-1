@@ -1,6 +1,8 @@
-
 <?php
 
+ini_set('display_errors',1);
+ini_set('display_startup_errors',1);
+error_reporting(E_ALL);
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -11,6 +13,8 @@
 try {
 $username = $_GET['usernamelogin'];
 $password = $_GET['passwordlogin'];
+$ilatitude = $_GET['ilatitude'];
+$ilongitude = $_GET['ilongitude'];
 
 $yhteys = new PDO("mysql:host=139.59.155.145;dbname=locatiot", $username, $password);
 
@@ -21,6 +25,10 @@ die("ERROR: " . $e->getMessage());
 
 echo "Yhteys muodostettu";
 echo "<br>" . "<br>";
+echo $username;
+echo $password;
+echo $ilatitude;
+echo $ilongitude;
 
 // virheenkäsittely: virheet aiheuttavat poikkeuksen
 $yhteys->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -28,17 +36,8 @@ $yhteys->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 //toinen yleinen vaihtoehto on utf8.
 $yhteys->exec("SET NAMES latin1");
 // valmistetaan kysely
-$kysely = $yhteys->query("SELECT * FROM locatiot")->fetchAll();
 
-foreach($kysely as $results) {
-  echo $results['ID'];
-  echo " ";
-  echo $results['latitude'];
-  echo " ";
-  echo $results['longitude'];
-  echo " ";
-  echo $results['timestamp'];
-  echo "<br>";
-}
-
+$preparequery = "INSERT INTO locatiot VALUES
+(NULL, '".$ilatitude."', '".$ilongitude."', NULL)";
+$insertquery = $yhteys->query($preparequery);
 ?>
