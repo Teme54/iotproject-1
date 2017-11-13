@@ -30,13 +30,15 @@ $yhteys->exec("SET NAMES latin1");
 // valmistetaan kysely
 $kysely = $yhteys->query("SELECT * FROM locatiot")->fetchAll();
 
+
+
 foreach($kysely as $results) {
   echo $results['ID'];
-  echo " ";
+  echo "    ";
   echo $results['latitude'];
-  echo " ";
+  echo "    ";
   echo $results['longitude'];
-  echo " ";
+  echo "    ";
   echo $results['timestamp'];
   echo "<br>";
 }

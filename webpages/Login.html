@@ -11,5 +11,22 @@
     </div>
       <input type="submit" class="button" name="loginSubmit" value="Login">
     </form>
+
 </div>
+<div id="xml">
+<button type="button" title="loadXML" onclick="loadXML()">LoadXML</button>
+</div>
+
+<script>
+function loadXML() {
+  var xmlload = new XMLHttpRequest();
+  xmlload.onreadystatechange = function() {
+    if (this.readyState == 4 & this.status == 200 ) {
+      document.getElementById("xml").innerHTML = this.responseText;
+  }
+};
+xmlload.open("GET","tyhmaapaskaa.txt", true);
+xmlload.send();
+}
+</script>
 </html>
