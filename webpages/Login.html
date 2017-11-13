@@ -22,11 +22,11 @@ function loadXML() {
   var xmlload = new XMLHttpRequest();
   xmlload.onreadystatechange = function() {
     if (this.readyState == 4 & this.status == 200 ) {
-      document.getElementById("xml").innerHTML = this.responseText;
+      document.getElementById("marker").innerHTML = this.responseText;
   }
 };
-xmlload.open("GET","tyhmaapaskaa.txt", true);
-xmlload.send();
+xmlload.open("GET","http://139.59.155.145/GMaps.xml", true);
+xmlload.send(null);
 }
 </script>
 </html>

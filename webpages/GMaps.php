@@ -1,51 +1,77 @@
+<!DOCTYPE html >
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <title>Google Maps Geolocator 1.1a</title>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+       #map {
+         height: 100%;
+         width: 100%;
+       }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
 
+  <body>
+    <div id="map"></div>
 
-<!DOCTYPE html>
-<html>
-<body>
+    <script>
 
-<h1>Google Maps Geolocator v1.0</h1>
+        function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+          center: new google.maps.LatLng(64.9973158, 25.4867483),
+          zoom: 12
+        });
 
-<!--Creates a HTML division for the Google Map -->
+          downloadUrl('http://139.59.155.145/GMaps.xml', function(data) {
+            var xml = data.responseXML;
+            var markers = xml.documentElement.getElementsByTagName('marker');
 
-<div id="googleMap" style="width:100%;height:400px;"></div>
+            Array.prototype.forEach.call(markers, function(markerElem) {
 
-<!-- Create a function to set the maps properties -->
+              var ID = markerElem.getAttribute('ID');
+              var timestamp = markerElem.getAttribute('timestamp');
 
-<script>
+              var point = new google.maps.LatLng(
+                  parseFloat(markerElem.getAttribute('latitude')),
+                  parseFloat(markerElem.getAttribute('longitude')));
 
-function myMap() {
+              var marker = new google.maps.Marker({
+                map: map,
+                position: point,
 
-var LatLng = {lat:64.9973939,lng: 25.4868044 };
+              });
+            });
+          });
+        }
 
-var mapProp= {
-    center:LatLng,
-    zoom:17,
-};
+      function downloadUrl(url, callback) {
+        var request = window.ActiveXObject ?
+            new ActiveXObject('Microsoft.XMLHTTP') :
+            new XMLHttpRequest;
 
-var map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+        request.onreadystatechange = function() {
+          if (request.readyState == 4) {
+            request.onreadystatechange = doNothing;
+            callback(request, request.status);
+          }
+        };
 
-var marker = new google.maps.Marker({
-	position:LatLng,
-	map:map,
-	animation:google.maps.Animation.DROP,
-	title: 'Hello team'
-	});
-	marker.addListener('Click', toggleBounce);
-}
+        request.open('GET', url, true);
+        request.send(null);
+      }
 
-function toggleBounce() {
-	if (marker.getAnimation() !== null ) {
-		marker.setAnimation(null);
-	}
-	else {
-		marker.setAnimation(google.maps.Animation.BOUNCE);
-	}
-}
-
-</script>
-
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD3cAdJ4TwzleiMXiwKfDlwNeB2JLUmomY&callback=myMap"></script>
-
-</body>
+      function doNothing() {}
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD3cAdJ4TwzleiMXiwKfDlwNeB2JLUmomY&callback=initMap">
+    </script>
+  </body>
 </html>
