@@ -20,9 +20,12 @@
 
   <body>
     <div id="map"></div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
     <script>
-      
+
+        var timer = setInterval(updateMap, 10000);
+
         function initMap() {
         var map = new google.maps.Map(document.getElementById('map'), {
           center: new google.maps.LatLng(64.9973158, 25.4867483),
@@ -52,6 +55,7 @@
           });
         }
 
+
       function downloadUrl(url, callback) {
         var request = window.ActiveXObject ?
             new ActiveXObject('Microsoft.XMLHTTP') :
@@ -66,6 +70,17 @@
 
         request.open('GET', url, true);
         request.send(null);
+      }
+
+      function updateMap () {
+      $(document).ready(function(){
+        $.ajax({ url: "http://139.59.155.145/XML_SQL.php",
+            type: "GET",
+            url: 'http://139.59.155.145/XML_SQL.php',
+            data: {usernamelogin: 'stduser', passwordlogin: 'samplepass916'},
+            });
+      });
+      initMap();
       }
 
       function doNothing() {}
