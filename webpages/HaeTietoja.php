@@ -9,8 +9,15 @@
 
 // muodostetaan yhteys tietokantaan
 try {
-$username = $_GET['usernamelogin'];
-$password = $_GET['passwordlogin'];
+
+  $username = $_GET['usernamelogin'];
+  $password = $_GET['passwordlogin'];
+
+if ( $_GET['usernamelogin'] == null || $_GET['passwordlogin'] == null ) {
+  $username = "stduser";
+  $password = "samplepass916";
+}
+else {}
 
 $yhteys = new PDO("mysql:host=139.59.155.145;dbname=locatiot", $username, $password);
 
@@ -19,7 +26,7 @@ catch (PDOException $e) {
 die("ERROR: " . $e->getMessage());
 }
 
-echo "Yhteys muodostettu";
+echo "Yhteys muodostettu tunnuksella: " . $username ."";
 echo "<br>" . "<br>";
 
 // virheenkäsittely: virheet aiheuttavat poikkeuksen

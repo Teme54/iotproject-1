@@ -4,13 +4,12 @@
     <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
     <title>Google Maps Geolocator 1.1a</title>
     <style>
-      /* Always set the map height explicitly to define the size of the div
-       * element that contains the map. */
+
        #map {
          height: 100%;
          width: 100%;
        }
-      /* Optional: Makes the sample page fill the window. */
+
       html, body {
         height: 100%;
         margin: 0;
@@ -23,11 +22,12 @@
     <div id="map"></div>
 
     <script>
-
+      
         function initMap() {
         var map = new google.maps.Map(document.getElementById('map'), {
           center: new google.maps.LatLng(64.9973158, 25.4867483),
           zoom: 12
+
         });
 
           downloadUrl('http://139.59.155.145/GMaps.xml', function(data) {
@@ -36,8 +36,8 @@
 
             Array.prototype.forEach.call(markers, function(markerElem) {
 
-              var ID = markerElem.getAttribute('ID');
-              var timestamp = markerElem.getAttribute('timestamp');
+              //var ID = markerElem.getAttribute('ID');
+              //var timestamp = markerElem.getAttribute('timestamp');
 
               var point = new google.maps.LatLng(
                   parseFloat(markerElem.getAttribute('latitude')),

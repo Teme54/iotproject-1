@@ -16,6 +16,7 @@ $password = $_GET['passwordlogin'];
 $ilatitude = $_GET['ilatitude'];
 $ilongitude = $_GET['ilongitude'];
 
+
 $yhteys = new PDO("mysql:host=139.59.155.145;dbname=locatiot", $username, $password);
 
 }
