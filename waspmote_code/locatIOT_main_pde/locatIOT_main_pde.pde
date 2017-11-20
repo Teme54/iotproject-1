@@ -20,15 +20,15 @@ LocatIoT Waspmote koodi
 #include "WaspGPRS_SIM928A.h"
 #include <WaspFrame.h>
 
-char apn[] = "data.moimobile.fi";
-char login[] = "login";
-char password[] = "password";
+char apn[] = "apn.moimobile.fi";
+char login[] = "";
+char password[] = "";
 
 
 char client_id[] = "LocatIoT-waspmote";  //MQTT client ID
 
 char topic[] = "testi"; //MQTT topic
-char msg[] = "terveseppo2"; //MQTT viesti
+char msg[] = "34.444444-66.666666"; //MQTT viesti
 
 uint8_t packet_len=0;
 
@@ -38,6 +38,7 @@ int8_t answer;
 
 int current_lat=6524, current_lon=2522;
 
+uint8_t sendData = 0;
 
 
 //function for generating the MQTT TCP packet
@@ -126,7 +127,7 @@ void locateGPS()
         USB.println(F("GPS NOT started"));   
     }
 
-	if ((GPS_status == 1) && (GPRS_SIM928A.waitForGPSSignal(30) == 1))
+	if ((GPS_status == 1) && (GPRS_SIM928A.waitForGPSSignal(2) == 1))
     {
         // 5. reads GPS data
         int8_t answer = GPRS_SIM928A.getGPSData(1);
@@ -138,12 +139,7 @@ void locateGPS()
             USB.print(GPRS_SIM928A.latitude);
             USB.print(F("\t\tLongitude (in degrees): "));
             USB.println(GPRS_SIM928A.longitude);
-            USB.print(F("Date: "));
-            USB.print(GPRS_SIM928A.date);
-            USB.print(F("\t\tUTC_time: "));
-            USB.println(GPRS_SIM928A.UTC_time);
-            
-            
+                        
             USB.print(F("\t\tSatellites in use: "));
             USB.println(GPRS_SIM928A.sats_in_use, DEC);
             USB.print(F("\t\tSatellites in view: "));
@@ -174,24 +170,26 @@ void locateGPS()
 
 			itoa(tenth_buf,lon_str+3,10);
 
-			strcpy(msg,"locationdata-lat-");
+			
 			strcat(msg,lat_str);
-			strcat(msg,"-lon-");
+			strcat(msg,"-");
 			strcat(msg,lon_str);
 
 			USB.println("*****");
 
 		    USB.println(msg);
+
+		    sendData = 1;
 			
         }    
     }
     else
     {
-        USB.println(F("GPS not started"));  
+        USB.println(F("GPS not started"));
+	sendData = 1;  
               
     }
-                
-        
+                        
 }
 
 void loop()
@@ -215,6 +213,10 @@ void loop()
 		USB.println(u);
 
 		parse_mqtt(topic, msg, sizeof(topic), strlen(msg));
+
+
+	if(sendData)
+	{
 
         // 3. sets pin code:
         USB.println(F("Setting PIN code..."));
@@ -317,6 +319,14 @@ void loop()
     {
         USB.println(F("GPRS_SIM928A module not ready"));    
     }
+
+	} //if sendData
+
+	else
+{
+USB.print("GPS fail");
+
+}
 
     // 10. powers off the GPRS_SIM928A module
     GPRS_SIM928A.OFF(); 
