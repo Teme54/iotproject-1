@@ -1,2 +1,2 @@
 # iotproject
-Game of IoT
+LocatIoT master repository
