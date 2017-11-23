@@ -58,6 +58,7 @@
 
         var activeInfoWindow;
 
+
         function updateMap () {
           $.ajax({ url: "http://139.59.155.145/XML_SQL.php",
               type: "GET",
@@ -71,7 +72,8 @@
 
         var map = new google.maps.Map(document.getElementById('map'), {
           center: new google.maps.LatLng(64.9973158, 25.4867483),
-          zoom: 12
+          zoom: 12,
+          mapTypeId: 'hybrid'
 
         });
 
@@ -83,7 +85,6 @@
 
               var ID = markerElem.getAttribute('ID');
               var timestamp = markerElem.getAttribute('timestamp');
-
               var iLatitude = parseFloat(markerElem.getAttribute('latitude'));
               var iLongitude = parseFloat(markerElem.getAttribute('longitude'));
 
@@ -94,6 +95,7 @@
                 position: point,
 
               });
+
               marker['infowindow'] = new google.maps.InfoWindow({
                 content: "ID: " + ID + "<br>" + "Timestamp: " + timestamp + "<br>" + "Latitude: " + iLatitude + "<br>" + "Longitude: " + iLongitude
               });
@@ -102,8 +104,11 @@
                 activeInfoWindow && activeInfoWindow.close();
                 this['infowindow'].open(map, this);
                 activeInfoWindow = this['infowindow'];
+                map.panTo(marker.getPosition());
               });
+
             });
+        
           });
       }
 
