@@ -28,6 +28,14 @@ die("ERROR: " . $e->getMessage());
 
 echo "Yhteys muodostettu tunnuksella: " . $username ."";
 echo "<br>" . "<br>";
+echo "ID";
+echo "&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp";
+echo "Latitude";
+echo "&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp";
+echo "Longitude";
+echo "&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp";
+echo "Timestamp";
+echo "<br>" . "<br>";
 
 // virheenkäsittely: virheet aiheuttavat poikkeuksen
 $yhteys->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -35,18 +43,20 @@ $yhteys->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 //toinen yleinen vaihtoehto on utf8.
 $yhteys->exec("SET NAMES latin1");
 // valmistetaan kysely
-$kysely = $yhteys->query("SELECT * FROM locatiot")->fetchAll();
+$kysely = $yhteys->query("SELECT * FROM locatiot ORDER BY ID DESC")->fetchAll();
 
 
 
 foreach($kysely as $results) {
+
   echo $results['ID'];
-  echo "    ";
+  echo "&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp";
   echo $results['latitude'];
-  echo "    ";
+  echo "&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp";
   echo $results['longitude'];
-  echo "    ";
+  echo "&nbsp;&nbsp;&nbsp;&nbsp&nbsp;&nbsp;&nbsp;&nbsp";
   echo $results['timestamp'];
+
   echo "<br>";
 }
 
