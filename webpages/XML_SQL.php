@@ -4,12 +4,35 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+
 try {
 
 // Username ja pass GET-menetelmällä saadaan URL:sta esim. 11.11.11.11/test.php?username=123&password=asd
 
-$username = $_GET['usernamelogin'];
-$password = $_GET['passwordlogin'];
+if (isset($_POST['uname'])) {
+  $username = $_POST['uname'];
+}
+else {
+  echo "Username undefined";
+}
+
+if (isset($_POST['passwd'])) {
+  $password = $_POST['passwd'];
+}
+else {
+  echo "Password undefined";
+}
+
+if (!empty($_POST['idStart']) && !empty($_POST['idEnd'])) {
+  $idS = $_POST['idStart'];
+  $idE = $_POST['idEnd'];
+  $kysely = "SELECT * FROM locatiot WHERE ID >= '$idS' AND ID <= '$idE'";
+}
+else {
+  $kysely = "SELECT * FROM locatiot ORDER BY ID DESC LIMIT 10";
+}
+
+
 
 $yhteys = new PDO("mysql:host=139.59.155.145;dbname=locatiot", $username, $password);
 
@@ -24,7 +47,8 @@ $yhteys->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 //toinen yleinen vaihtoehto on utf8.
 $yhteys->exec("SET NAMES latin1");
 // valmistetaan kysely
-$stmt = $yhteys->query('SELECT * FROM locatiot');
+$stmt = $yhteys->query($kysely);
+echo $kysely;
 $stmt->setFetchMode(PDO::FETCH_ASSOC);
 
 // Uusi Document object model olio
@@ -47,6 +71,7 @@ foreach ($stmt as $row) {
     // Muutokset asetetaan voimaan jokaiseen marker-elementtiin käskyllä appendChild
 
     $markers->appendChild($entry);
+
 }
 
 // Muutokset asetetaan voimaan markers-elementtiin eli pääelementtiin
@@ -57,5 +82,5 @@ $doc->appendChild($markers);
 //header('Content-type: text/xml');
 header('Content-type: application/xml');
 
-$doc->save('GMaps.xml');
+$doc->save('GMapsTest.xml');
 echo $doc->saveXML();
