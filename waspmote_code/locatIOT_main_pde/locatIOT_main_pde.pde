@@ -44,78 +44,80 @@ uint8_t sendData = 1, sleeping = 0;
 
 //function for generating the MQTT TCP packet
 
-void parse_mqtt(char *topic, char *msg, uint8_t topic_lt, uint8_t msg_lt) 
+void parse_mqtt(char *topic, char *msg, uint8_t topic_lt, uint8_t msg_lt)
 {
 
 	  //USB.println(topic);USB.println(msg);
-	  
+
 		uint8_t clientid_lt = sizeof(client_id)-1;
-	  
+
 	  uint8_t connect_command[] = {0x10, 0x00, 0x00, 0x06, 0x4d, 0x51, 0x49, 0x73, 0x64, 0x70, 0x03, 0x02, 0x00, 0x3c, 0x00, 0x00};
 
 	  connect_command[1] = clientid_lt + 14; connect_command[15] = clientid_lt;
-	 
+
 	  uint8_t packet_ptr = 0; //this is a pointer to the end of the packet string
-	  
+
 	  memmove(mqtt_packet,connect_command,sizeof(connect_command)); //move connect command header to the beginning of mqtt_packet
 	  packet_ptr += sizeof(connect_command); //increment packet pointer by the added data length so we know where to write to the packet next
-	  	  
+
 	  memmove(mqtt_packet+packet_ptr, client_id, sizeof(client_id) ); //add client id next
 	  packet_ptr += clientid_lt;
-	  
+
 	  uint8_t w_buf[5] = {0x30, 0x00, 0x00, topic_lt}; //initialise a temporary work buffer. Put in publish command 0x30, length of publish message, topic length MSB and LSB
-	  
+
 	  w_buf[1] = topic_lt+msg_lt+2; //replace 0 with length of publish message
 
 		memmove(mqtt_packet+packet_ptr, w_buf, 4);
 	  packet_ptr +=4;
-	  
+
 	  memmove(mqtt_packet+packet_ptr, topic, topic_lt);
 	  packet_ptr +=topic_lt;
-	  
+
 	  memmove(mqtt_packet+packet_ptr, msg, msg_lt);
 	  packet_ptr +=msg_lt;
-	  
+
 	  packet_len = packet_ptr;
-		
+
 	  for(uint8_t p=0;p<packet_len;p++)
 	  {
-		
+
 		USB.print(mqtt_packet[p],HEX);
 		USB.print(" ");
-		
+
 		if(p>0 && (p%15 == 0))USB.print("\n");
-		
+
 	  }
 
-  
+
 }
 
 void setup()
 {
-  
+
      // setup for Serial port over USB:
     USB.ON();
     USB.println(F("USB port started..."));
 
+
+
     // 1. sets operator parameters
     GPRS_SIM928A.set_APN(apn, login, password);
-  
-    
+
+
 }
 
 void locateGPS()
 {
-  
+
   	int8_t GPS_status = GPRS_SIM928A.GPS_ON();
     if (GPS_status == 1)
-    { 
+    {
         USB.println(F("GPS started. Waiting for GPS acquisition for 200 seconds"));
-        
+
     }
     else
     {
-        USB.println(F("GPS NOT started"));   
+        USB.println(F("GPS NOT started"));
     }
 
 	if ((GPS_status == 1) && (GPRS_SIM928A.waitForGPSSignal(200) == 1))
@@ -125,24 +127,24 @@ void locateGPS()
 
         if (answer == 1)
         {
-            // 6. Shows all GPS data collected          
+            // 6. Shows all GPS data collected
             USB.print(F("Latitude (in degrees): "));
             USB.print(GPRS_SIM928A.latitude);
             USB.print(F("\t\tLongitude (in degrees): "));
             USB.println(GPRS_SIM928A.longitude);
-                        
+
             USB.print(F("\t\tSatellites in use: "));
             USB.println(GPRS_SIM928A.sats_in_use, DEC);
 
 			current_lat = (long int)(GPRS_SIM928A.latitude*100000); //take the coordinate values and convert to integers(save decimals by multiplying)
 			current_lon = (long int)(GPRS_SIM928A.longitude*100000); //65.543222 -> 6554322
-	
+
 			uint32_t whole_buf = 0; uint32_t tenth_buf=0;
 
 			char lat_str[10], lon_str[10];
 			char tenth_str[10];
 
-			whole_buf = (uint32_t)GPRS_SIM928A.latitude;  
+			whole_buf = (uint32_t)GPRS_SIM928A.latitude;
 			tenth_buf = current_lat-((whole_buf-1)*100000);
 
 			sprintf(lat_str,"%ld.",whole_buf);
@@ -172,16 +174,16 @@ void locateGPS()
 			USB.println(msg);
 
 		    sendData = 1;
-			
-        }    
+
+        }
     }
     else
     {
         USB.println(F("GPS not started"));
-	sendData = 0;  
-              
+	sendData = 0;
+
     }
-                        
+
 }
 
 void loop()
@@ -194,7 +196,7 @@ void loop()
 
   	//usb serial to RF UART
     Utils.setMuxSocket1();
-    
+
     beginSerial(9600,1);
 
 	answer = GPRS_SIM928A.ON();
@@ -202,7 +204,7 @@ void loop()
     if ((answer == 1) || (answer == -3))
     {
         USB.println(F("GPRS_SIM928A module ready..."));
-
+		GPRS_SIM928A.sendAT("+CGNSTST=1","OK");
 		locateGPS(); //get GPS location and save location message to msg
 		parse_mqtt(topic, msg, strlen(topic), strlen(msg)); //parse the message to MQTT protocol format
 
@@ -212,7 +214,7 @@ void loop()
 
 		// 3. sets pin code:
 		USB.println(F("Setting PIN code..."));
-		if (GPRS_SIM928A.setPIN("0000") == 1) 
+		if (GPRS_SIM928A.setPIN("0000") == 1)
 		{
 		    USB.println(F("PIN code accepted"));
 		}
@@ -221,7 +223,7 @@ void loop()
 		}
 
 		// 4. waits for connection to the network:
-		answer = GPRS_SIM928A.check(180);    
+		answer = GPRS_SIM928A.check(180);
 		if (answer == 1)
 		{
 		    USB.println(F("GPRS_SIM928A module connected to the network..."));
@@ -234,12 +236,12 @@ void loop()
 			USB.println(F("Done"));
 
 			// if configuration is success shows the IP address
-			USB.print(F("Configuration success. IP address: ")); 
+			USB.print(F("Configuration success. IP address: "));
 			//USB.println(GPRS_SIM928A.IP_dir);
-			USB.print(F("Opening TCP socket..."));  
+			USB.print(F("Opening TCP socket..."));
 
-			// 6. create a TCP socket to server 
-			
+			// 6. create a TCP socket to server
+
 			answer = GPRS_SIM928A.createSocket(TCP_CLIENT, "139.59.155.145", "1883");
 			if (answer == 1)
 			{
@@ -252,7 +254,7 @@ void loop()
 
 			    USB.print(F("Sending MQTT packet"));
 			    // 7. sending 'test_string'
-			    if (GPRS_SIM928A.sendData(mqtt_packet, packet_len) == 1) 
+			    if (GPRS_SIM928A.sendData(mqtt_packet, packet_len) == 1)
 			    {
 			        USB.println(F("Done"));
 			    }
@@ -260,9 +262,9 @@ void loop()
 			        USB.println(F("Fail"));
 			    }
 
-			    USB.print(F("Closing TCP socket..."));  
+			    USB.print(F("Closing TCP socket..."));
 			    // 9. closes socket
-			    if (GPRS_SIM928A.closeSocket() == 1) 
+			    if (GPRS_SIM928A.closeSocket() == 1)
 			    {
 			        USB.println(F("Done"));
 			    }
@@ -281,8 +283,8 @@ void loop()
 			else {
 			    USB.print(F("Connection failed. Error code: "));
 			    USB.println(answer, DEC);
-			}  
-         
+			}
+
 		    }
 		    else if (answer < -14)
 		    {
@@ -299,28 +301,28 @@ void loop()
 
 		}
 		else{
-		    USB.println(F("GPRS_SIM928A module cannot connect to the network"));     
+		    USB.println(F("GPRS_SIM928A module cannot connect to the network"));
 		}
-	    
+
 	}
 
 	else
-	{	
+	{
 		USB.println("GPS fail");
 	}
 
-	
+
 	}//if module ready
 
 	    else{
-		USB.println(F("GPRS_SIM928A module not ready"));    
+		USB.println(F("GPRS_SIM928A module not ready"));
 	    }
-	
 
-		
+
+
     // Power down GPRS module completely. There is also sleep mode but this consumes way more current than should (50-60mA)
 	// maybe on tracking mode could use sleep mode, because then it can get GPS location faster(hot start)
-    GPRS_SIM928A.OFF(); 
+    GPRS_SIM928A.OFF();
 
     USB.println(F("Sleeping..."));
     sleeping = 1;
@@ -329,7 +331,3 @@ void loop()
     PWR.deepSleep("00:01:00:00", RTC_OFFSET, RTC_ALM1_MODE1, ALL_OFF);
 
 }
-
-
-
-

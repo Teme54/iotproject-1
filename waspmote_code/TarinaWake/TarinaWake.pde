@@ -10,13 +10,18 @@ LocatIoT Waspmote koodi
 */
 
 #include "WaspGPRS_SIM928A.h"
-boolean poistu = true;
+
+#define VIBES 5 //how many inertial interrupts must occur before movement is detected
+#define ACC_SENSITIVITY 50 //intertial interrupt sensitivity
+#define TRACKING_LENGTH 2	//how many times device will do tracking, before going back to stationary, IF there was no vibration during the time
+
 unsigned int kierto = 5000;
 
- unsigned long intWait = 0;
- 
- unsigned int interval = 3000;
- unsigned long previousMillis = 0; //ACCEL 
+unsigned long intWait = 0;
+
+uint8_t trackingCounter = 0;
+
+unsigned long previousMillis = 0; //ACCEL 
 volatile int intCount = 0;  //ACCEL 
 
 char apn[] = "apn.moimobile.fi";
@@ -38,7 +43,7 @@ uint32_t current_lat=0, current_lon=0;
 
 //double test_lat = 65.006405, test_lon = 24.002345;
 
-uint8_t sendData = 1, sleeping = 0;
+uint8_t sendData = 1, sleeping = 0, trackingMode = 0;
 
 
 //function for generating the MQTT TCP packet
@@ -189,17 +194,36 @@ void accel(){
  
   ACC.ON();
   
- //ACC.setMode(ACC_LOW_POWER_1); //
 
-  // 2. Enable interruption: Inertial Wake Up
+ 	if(trackingMode == 0)
+	{
+			USB.println(F("Stationary mode"));
+	}
+	else
+	{
 
-  ACC.setIWU(450); 
-   USB.println(intCount);
-  viive();
-  // 3. Set low-power consumption state
+			USB.println(F("Tracking mode"));
+			USB.println(trackingCounter,DEC);
+	}
+ 
+ 	if( intFlag & ACC_INT ) //if woken up by accelerometer
+	{
+	    // clear interruption flag
+	    intFlag &= ~(ACC_INT);
+	      
+	    viive();
 
-   
-  
+	}
+	else 
+	{
+			sendData = 1; //send data even if there was no vibration after waking up from stationary mode sleep
+			ACC.setIWU(ACC_SENSITIVITY); 
+			if(trackingMode) trackingCounter++;
+			if(trackingCounter > TRACKING_LENGTH) {trackingMode = 0; trackingCounter = 0;}
+		
+	}
+
+
 }
 void viive(){
 
@@ -207,56 +231,60 @@ void viive(){
     
     previousMillis = millis();
     while((millis() - previousMillis) < kierto){
-    USB.println(intCount);
+    //USB.println(intCount);
       rupt();
-      if(intCount > 10) break;
+      if(intCount > VIBES) break;
         
     }
-    if(intCount <= 10){
+    
+    if(intCount <= VIBES){ //not enough vibration
       sendData = 0;
       intCount = 0;
+      
+      
     }
-    else if(intCount > 10) {
-    sendData = 1;
-     USB.println(F("paivaa"));
+    else if(intCount > VIBES) {
+    
+    sendData = 1; 
+    if(trackingMode == 0)
+    {
+    trackingMode = 1; trackingCounter = 0;
+    }
+    
+     USB.println(F("Enough vibration detected. Tracking mode is enabled"));
     intCount = 0;
+    
     }
 }
 void rupt(){
 
-   // Interruption event happened
-  // 4. Disable interruption: Inertial Wake Up
-  //    This is done to avoid new interruptions
-    // 5. Check the interruption source
-    
-   // ACC.unsetIWU();
-        if( intFlag & ACC_INT )
-  {
-    // clear interruption flag
-    intFlag &= ~(ACC_INT);
-   intCount = intCount + 1; 
-    USB.println(F("++ ACC interrupt detected ++"));
-    USB.println(intCount);
-  //( 6. Clear interruption pin   
+   //in this function check if ACC_INT flag is set
 
-  // This function is used to make sure the interruption pin is cleared
-  // if a non-captured interruption has been produced
- 
-} 
-ACC.ON();
-ACC.setIWU(450);
+	if( intFlag & ACC_INT )
+	{
+	    // clear interruption flag
+	    intFlag &= ~(ACC_INT);
+	   	intCount++; 
+	    USB.println(F("++ ACC interrupt detected ++"));
+	    //USB.println(intCount);
+
+	} 
+
+	ACC.ON();
+	ACC.setIWU(450); //set inertial wakeup interrupt on again
 }
 void loop()
 {
-  accel();
 
-  // 1. Starts accelerometer
- if(sendData)
+  accel(); //start ACC interrupt and start polling it
+
+ if(sendData) //if interrupt polling function has decided that we should send data
   {
+  
   
     // 2. activates the GPRS_SIM928A module:
 
-  USB.print(F("Battery Level: "));
+  	USB.print(F("Battery Level: "));
     USB.print(PWR.getBatteryLevel(),DEC);
 
     //usb serial to RF UART
@@ -264,135 +292,154 @@ void loop()
     
     beginSerial(9600,1);
 
-  answer = GPRS_SIM928A.ON();
-
+  	//answer = GPRS_SIM928A.ON();
+		answer = 5;
     if ((answer == 1) || (answer == -3))
     {
-        USB.println(F("GPRS_SIM928A module ready..."));
+				    USB.println(F("GPRS_SIM928A module ready..."));
 
-    locateGPS(); //get GPS location and save location message to msg
-    parse_mqtt(topic, msg, strlen(topic), strlen(msg)); //parse the message to MQTT protocol format
+				locateGPS(); //get GPS location and save location message to msg
+				parse_mqtt(topic, msg, strlen(topic), strlen(msg)); //parse the message to MQTT protocol format
 
+				// 3. sets pin code:
+				USB.println(F("Setting PIN code..."));
+				if (GPRS_SIM928A.setPIN("0000") == 1) 
+				{
+				    USB.println(F("PIN code accepted"));
+				}
+				else   {
+				    USB.println(F("PIN code incorrect"));
+				}
 
-  
+				// 4. waits for connection to the network:
+				answer = GPRS_SIM928A.check(180);    
+				if (answer == 1)
+				{
+				    USB.println(F("GPRS_SIM928A module connected to the network..."));
 
-    // 3. sets pin code:
-    USB.println(F("Setting PIN code..."));
-    if (GPRS_SIM928A.setPIN("0000") == 1) 
-    {
-        USB.println(F("PIN code accepted"));
-    }
-    else   {
-        USB.println(F("PIN code incorrect"));
-    }
+				    // 5. configures IP connection
+				    USB.print(F("Setting connection..."));
+				    answer = GPRS_SIM928A.configureGPRS_TCP_UDP(SINGLE_CONNECTION, NON_TRANSPARENT);
+						  if (answer == 1)
+						  {
+									USB.println(F("Done"));
 
-    // 4. waits for connection to the network:
-    answer = GPRS_SIM928A.check(180);    
-    if (answer == 1)
-    {
-        USB.println(F("GPRS_SIM928A module connected to the network..."));
+									// if configuration is success shows the IP address
+									USB.print(F("Configuration success. IP address: ")); 
+									//USB.println(GPRS_SIM928A.IP_dir);
+									USB.print(F("Opening TCP socket..."));  
 
-        // 5. configures IP connection
-        USB.print(F("Setting connection..."));
-        answer = GPRS_SIM928A.configureGPRS_TCP_UDP(SINGLE_CONNECTION, NON_TRANSPARENT);
-        if (answer == 1)
-        {
-      USB.println(F("Done"));
-
-      // if configuration is success shows the IP address
-      USB.print(F("Configuration success. IP address: ")); 
-      //USB.println(GPRS_SIM928A.IP_dir);
-      USB.print(F("Opening TCP socket..."));  
-
-      // 6. create a TCP socket to server 
-      
-      answer = GPRS_SIM928A.createSocket(TCP_CLIENT, "139.59.155.145", "1883");
-      if (answer == 1)
-      {
-          USB.println(F("Connected"));
+									// 6. create a TCP socket to server 
+						
+									answer = GPRS_SIM928A.createSocket(TCP_CLIENT, "139.59.155.145", "1883");
+									if (answer == 1)
+									{
+											USB.println(F("Connected"));
 
 
-          //************************************************
-          //             Send the MQTT packet
-          //************************************************
+											//************************************************
+											//             Send the MQTT packet
+											//************************************************
 
-          USB.print(F("Sending MQTT packet"));
-          // 7. sending 'test_string'
-          if (GPRS_SIM928A.sendData(mqtt_packet, packet_len) == 1) 
-          {
-              USB.println(F("Done"));
-          }
-          else{
-              USB.println(F("Fail"));
-          }
+											USB.print(F("Sending MQTT packet"));
+											// 7. sending 'test_string'
+											if (GPRS_SIM928A.sendData(mqtt_packet, packet_len) == 1) 
+											{
+												  USB.println(F("Done"));
+											}
+											else{
+												  USB.println(F("Fail"));
+											}
 
-          USB.print(F("Closing TCP socket..."));  
-          // 9. closes socket
-          if (GPRS_SIM928A.closeSocket() == 1) 
-          {
-              USB.println(F("Done"));
-          }
-          else   {
-              USB.println(F("Fail"));
-          }
-      }
+											USB.print(F("Closing TCP socket..."));  
+											// 9. closes socket
+											if (GPRS_SIM928A.closeSocket() == 1) 
+											{
+												  USB.println(F("Done"));
+											}
+											else   {
+												  USB.println(F("Fail"));
+											}
+								}
 
-      else if (answer == -2)
-      {
-          USB.print(F("Connection failed. Error code: "));
-          USB.println(answer, DEC);
-          USB.print(F("CME error code: "));
-          USB.println(GPRS_SIM928A.CME_CMS_code, DEC);
-      }
-      else {
-          USB.print(F("Connection failed. Error code: "));
-          USB.println(answer, DEC);
-      }  
-         
-        }
-        else if (answer < -14)
-        {
-      USB.print(F("Configuration failed. Error code: "));
-      USB.println(answer, DEC);
-      USB.print(F("CME error code: "));
-      USB.println(GPRS_SIM928A.CME_CMS_code, DEC);
-        }
+								else if (answer == -2) //createSocket return value
+								{
+											USB.print(F("Connection failed. Error code: "));
+											USB.println(answer, DEC);
+											USB.print(F("CME error code: "));
+											USB.println(GPRS_SIM928A.CME_CMS_code, DEC);
+								}
+								else { //createSocket return
+											USB.print(F("Connection failed. Error code: "));
+											USB.println(answer, DEC);
+								}  
+						   
+						  }
+						  else if (answer < -14) //configure GPRS TCP UDP connection return
+						  {
+									USB.print(F("Configuration failed. Error code: "));
+									USB.println(answer, DEC);
+									USB.print(F("CME error code: "));
+									USB.println(GPRS_SIM928A.CME_CMS_code, DEC);
+						  }
 
-        else {
-      USB.print(F("Configuration failed. Error code: "));
-      USB.println(answer, DEC);
-        }
+						  else { //configure GPRS TCP UDP return
+									USB.print(F("Configuration failed. Error code: "));
+									USB.println(answer, DEC);
+						  }
 
-    }
-    else{
-        USB.println(F("GPRS_SIM928A module cannot connect to the network"));     
-    }
-      
-  }
+					}
+				
+				else{ //GPRS connection check return
+				    USB.println(F("GPRS_SIM928A module cannot connect to the network"));     
+				}
+				
+				// Power down GPRS module completely. There is also sleep mode but this consumes way more current than should (50-60mA)
+			// maybe on tracking mode could use sleep mode, because then it can get GPS location faster(hot start)
+				if(trackingMode)
+				{
+				GPRS_SIM928A.setMode(GPRS_PRO_MIN);
+				}
+				else
+				{
+				GPRS_SIM928A.OFF(); 
+				}
+				
+				
+				USB.println(F("Sleeping..."));
+				sleeping = 1;
+				  
+	}
 
-  else
+  else //if module ready
   { 
     USB.println("GPS fail");
   }
 
-  
-  //if module ready
-
-    // Power down GPRS module completely. There is also sleep mode but this consumes way more current than should (50-60mA)
-  // maybe on tracking mode could use sleep mode, because then it can get GPS location faster(hot start)
-    GPRS_SIM928A.OFF(); 
-
-    USB.println(F("Sleeping..."));
-    sleeping = 1;
-
   }
-    // 11. sleeps one hour
-    //PWR.deepSleep("00:01:00:00", RTC_OFFSET, RTC_ALM1_MODE1, ALL_OFF);
-      if(intCount == 0){
-        ACC.ON();
-        ACC.setIWU(450);
-          USB.println(F("Waspmote goes into sleep mode until the Accelerometer causes an interrupt"));
-          PWR.sleep(ALL_OFF);  
-      }
+  else //sendData
+  {
+  
+  	USB.println(F("There was no vibration, don't send anything"));
+  	
+  }
+
+
+  
+   
+			if(trackingMode == 0)
+			{
+				USB.println(F("Going to stationary mode sleep for 15 sec"));
+				ACC.ON();
+    		ACC.setIWU(ACC_SENSITIVITY);
+				PWR.deepSleep("00:00:30:00", RTC_OFFSET, RTC_ALM1_MODE1, ALL_OFF);
+			}
+			else
+			{
+				USB.println(F("Going to tracking mode sleep for 5 sec"));
+				PWR.deepSleep("00:00:01:00", RTC_OFFSET, RTC_ALM1_MODE1, ALL_OFF);
+				
+			}
+			
 }
 
