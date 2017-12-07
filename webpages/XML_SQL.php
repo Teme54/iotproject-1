@@ -3,42 +3,72 @@
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-
+$idS = null;
+$idE = null;
 
 try {
 
-// Username ja pass GET-menetelmällä saadaan URL:sta esim. 11.11.11.11/test.php?username=123&password=asd
+// Tarkistetaan, onko POST-metodilla asetettu muuttujien username, password, idStart ja idEnd
+// Mikäli on, saadut arvot asetetaan muuttujiin, jos ei, niin asetetaan GET-metdoista saadut arvot
 
-if (isset($_POST['uname'])) {
-  $username = $_POST['uname'];
-}
-else {
-  echo "Username undefined";
-}
+    if (isset($_POST['uname'])) {
+        $username = $_POST['uname'];
+        echo "Username by POST-method. ";
+    } else {
+        $username = $_GET['uname'];
+        echo "Username by GET-method. ";
+    }
 
-if (isset($_POST['passwd'])) {
-  $password = $_POST['passwd'];
-}
-else {
-  echo "Password undefined";
-}
+    if (isset($_POST['passwd'])) {
+        $password = $_POST['passwd'];
+        echo "Password by POST-method. ";
+    } else {
+        $password = $_GET['passwd'];
+        echo "Password by GET-method. ";
+    }
+    if (isset($_POST['tsminf'])) {
+        $tsminf = $_POST['tsminf'];
+        echo "Timestamp MIN value POSTED, MIN: ";
+        echo $tsminf;
+        echo " ";
+    } else {
+        echo "Timestamp MIN value wasn't got";
+    }
+// tähän kysely select * from locatiot where timestamp between '2017-11-25 00:00:00' and '2017-11-30 16:03:50';
 
-if (!empty($_POST['idStart']) && !empty($_POST['idEnd'])) {
-  $idS = $_POST['idStart'];
-  $idE = $_POST['idEnd'];
-  $kysely = "SELECT * FROM locatiot WHERE ID >= '$idS' AND ID <= '$idE'";
-}
-else {
-  $kysely = "SELECT * FROM locatiot ORDER BY ID DESC LIMIT 10";
-}
+    if (isset($_POST['tsmaxf'])) {
+        $tsmaxf = $_POST['tsmaxf'];
+        echo "Timestamp MAX value POSTED, MAX: ";
+        echo $tsmaxf;
+        echo " ";
+    } else {
+        echo "Timestamp MAX value wasn't got";
+    }
+// Jos ID Start & ID End muuttujat on annettu GMaps-skriptissä, niin SQL-kyselyä muutetaan hakemaan markkerit tietyltä aikavälitä
+// Jos arvot on tyhjät, valitaan vakiona viimeiset 10 markkeria
 
+    if (!empty($_POST['idStart']) && !empty($_POST['idEnd'])) {
+        $idS = $_POST['idStart'];
+        $idE = $_POST['idEnd'];
+        echo "Query: ID Start & ID End set  ";
+        $kysely = "SELECT * FROM locatiot WHERE ID >= '$idS' AND ID <= '$idE'";
+    }
+    else {
+      if ( $_POST['tsmaxf'] === null && $_POST['$tsminf'] === null ){
+          $kysely = "SELECT * FROM locatiot ORDER BY ID DESC LIMIT 10";
+          echo "Query: Default, last 10 markers chosen. ";
+        }
+        else {
+          $kysely= "SELECT * FROM locatiot WHERE timestamp BETWEEN '$tsminf' AND '$tsmaxf'";
+          echo "Query: Markers chosen between two timestamp values";
+        }
+    }
 
+// Uusi PDO-olio, muodostetaan yhteys MySQL-tietokantaan
 
-$yhteys = new PDO("mysql:host=139.59.155.145;dbname=locatiot", $username, $password);
-
-}
-catch (PDOException $e) {
-die("ERROR: " . $e->getMessage());
+    $yhteys = new PDO("mysql:host=139.59.155.145;dbname=locatiot", $username, $password);
+} catch (PDOException $e) {
+    die("ERROR: " . $e->getMessage());
 }
 
 // virheenkäsittely: virheet aiheuttavat poikkeuksen
@@ -71,7 +101,6 @@ foreach ($stmt as $row) {
     // Muutokset asetetaan voimaan jokaiseen marker-elementtiin käskyllä appendChild
 
     $markers->appendChild($entry);
-
 }
 
 // Muutokset asetetaan voimaan markers-elementtiin eli pääelementtiin
@@ -81,6 +110,5 @@ $doc->appendChild($markers);
 // Set the appropriate content-type header and output the XML
 //header('Content-type: text/xml');
 header('Content-type: application/xml');
-
-$doc->save('GMapsTest.xml');
 echo $doc->saveXML();
+$doc->save('xml/GMaps.xml');
