@@ -1,0 +1,21 @@
+#bin/bash
+#TESTI
+
+
+mosquitto_sub -h 139.59.155.145  -t 'testi' | while read RAW_DATA
+do
+{ read -r val; read -r val2; } <k3
+
+latitude=$( echo $RAW_DATA | cut -f 1 -d"-")
+longitude=$( echo $RAW_DATA | cut -f 2 -d"-")
+
+#echo $latitude >> /home/locatiot/ulostulo
+#echo $longitude >> /home/locatiot/ulostulo
+
+mysql -h 139.59.155.145 -u $val2 -p$val  <<DATA
+ USE locatiot
+ INSERT  into locatiot(latitude, longitude) VALUES ('$latitude', '$longitude');
+DATA
+
+done
+
