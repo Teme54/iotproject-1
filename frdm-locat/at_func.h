@@ -15,7 +15,7 @@ void readATResponse(char *answer);
 uint8_t initSIMCOM(char *answer);
 uint8_t sendManualATCommand(char *command, char *answer);
 
-void sendSerialData(const char *daatta);
+void sendSerialData(const char *daatta, uint8_t len);
 
 
 #endif /* AT_FUNC_H_ */

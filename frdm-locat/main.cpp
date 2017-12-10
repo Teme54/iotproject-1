@@ -5,12 +5,13 @@
 //#include "at_commands.h"
 #include "gps_func.h"
 #include "gprs_func.h"
+#include "locat_functions.h"
 
 DigitalOut myled(LED1);
 
  
 Serial pc(USBTX,USBRX,115200);
-Serial rfmodule(D1,D0,9600);
+Serial rfmodule(D1,D0,57600);
 
 Ticker kello;
 
@@ -21,6 +22,15 @@ volatile char timer = 0;
 char SimcomRecBuf[300];		//buffer for SIMCOM AT response message
 char PcRecBuf[50];			//buffer for PC serial communication
 char is_response = 1;
+
+
+char client_id[20] = "LocatIoT-Node";
+char topic[10] = "testi";
+char msg[50] = "66.6-66.6";
+uint8_t packet_len, trackingMode, sendData;
+
+
+char mqtt_packet[100]; 
 
 void PC_receiveInt();
 void RF_receiveInt();
@@ -59,33 +69,48 @@ int main()
     pc.printf("LocatIoT started\r\n");
 
     char s = 0;
-    char waiting = 0;
     char response = 0;
     //attach the receiveInt functions for both PC and SIMCOM uart interfaces
    // pc.attach(&PC_receiveInt, Serial::RxIrq);
     //rfmodule.attach(&RF_receiveInt, Serial::RxIrq);
 
-    kello.attach(&timeoutTimer,0.5);	//attach the timeout timer
+    kello.attach(&timeoutTimer,0.1);	//attach the timeout timer
 
     response = initSIMCOM(&SimcomRecBuf[0]);
    
    	//UART3 ->C1 = 0xff;
 
+   	parse_mqtt(topic,msg,strlen(topic),strlen(msg));
+
     GPRS_setPin("0000");
-    wait(0.5);
+   
 
     initGPSTracking();
-    wait(0.5);
-    GPRS_checkNetwork();
-    wait(0.5);
-    GPRS_checkGPRSAttachment();
-    wait(0.5);
-    GPRS_configureIP();
-    wait(1);
-    GPRS_createTCPSocket();
-    wait(2);
 
-    GPRS_sendData();
+    GPRS_checkNetwork();
+   
+    GPRS_checkGPRSAttachment();
+   
+    GPRS_configureIP();
+   
+    GPRS_createTCPSocket();
+   
+
+
+    GPRS_sendData(mqtt_packet, packet_len);
+
+    //pc.puts(mqtt_packet);
+    pc.printf("MQTT packet sent\r\n");
+
+    /*for(uint8_t p=0;p<packet_len;p++)
+    {
+    
+    pc.printf("%x  ",mqtt_packet[p]);
+    
+    
+    if(p>0 && (p%15 == 0))pc.printf("\r\n");
+    
+    }*/
     
 
     while (true) {
@@ -118,7 +143,7 @@ int main()
         	memset(PcRecBuf,0x00,sizeof(PcRecBuf));
 
         	PcRecPtr = 0;
-        	waiting = 1;timer = 0;
+        	timer = 0;
 
 	    }
 

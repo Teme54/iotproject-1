@@ -11,6 +11,6 @@ void GPRS_checkGPRSAttachment();
 void GPRS_configureIP();
 void GPRS_createTCPSocket();
 
-void GPRS_sendData();
+void GPRS_sendData(const char *daatta, uint8_t len);
 
 #endif

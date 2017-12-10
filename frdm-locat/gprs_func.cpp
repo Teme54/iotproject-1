@@ -9,7 +9,7 @@ extern char SimcomRecBuf[];
 extern void printSimcomBuffer(char ok);
 extern uint8_t sendATCommand(char *command, char *answer, const char *expectedAnswer);
 extern void printSimcomBuffer(char ok);
-extern void sendSerialData(const char *daatta);
+extern void sendSerialData(const char *daatta, uint8_t len);
 
 extern Serial pc;
 
@@ -89,7 +89,7 @@ void GPRS_configureIP()
 	}
 
 	response = 0;
-	wait(0.5);
+	
 	while(response != 2)
 	{
 	response = sendATCommand(&AT_CIPSTATUS[0],&SimcomRecBuf[0], "START");
@@ -97,16 +97,10 @@ void GPRS_configureIP()
 	}
 
 	response = 0;
-	wait(0.5);
-
-	while(response != 2)
-	{
+	
 	response = sendATCommand(&AT_CIICR[0],&SimcomRecBuf[0], "OK");
 	printSimcomBuffer(response);
-	
-	}
 
-	wait(2);
 
 	response = 0;
 
@@ -139,22 +133,22 @@ void GPRS_createTCPSocket()
 {
 
 	char response=0;
+	wait(0.5);
 
-	while(response ==0)
-	{
+	//while(response ==0)
+	//{
 	response = sendATCommand(&AT_CIPSTART[0],&SimcomRecBuf[0], "CONNECT OK");
 	printSimcomBuffer(response);
 	
-	}
+	//}
 
 }
 
-void GPRS_sendData()
+void GPRS_sendData(const char *daatta, uint8_t len)
 
 {
 	char response = 0;
-	char daatta[] = "FRDM piiskaa waspmotea minka kerkeaa";
-	uint8_t len = strlen(daatta);
+		
 	char buffer[3];
 
 	sprintf(buffer,"%d",len);
@@ -163,19 +157,16 @@ void GPRS_sendData()
 	memset(tmpbuf,0x00,sizeof(tmpbuf));
 
 	strcat(tmpbuf,AT_CIPSEND);
-	strcat(tmpbuf,buffer);
+	memmove(tmpbuf+strlen(AT_CIPSEND),buffer,2);
 
 	//pc.puts(tmpbuf);pc.putc(0x0a);
 
 
 	response = sendATCommand(tmpbuf,&SimcomRecBuf[0], "NONE");
 	printSimcomBuffer(response);
+	wait(0.5);
 
-	sendSerialData(daatta);
-
-
-
-
+	sendSerialData(daatta, len);
 
 }
 

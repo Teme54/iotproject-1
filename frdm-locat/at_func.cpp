@@ -67,13 +67,14 @@ uint8_t sendATCommand(char *command, char *answer, const char *expectedAnswer)
 	timer = 0;
 	char *if_ok = 0;
 
-	while(timer < 5 && !if_ok)
+	while(timer < 8 && !if_ok)
 	{
 
 		while(rfmodule.readable())
 		{
 			readATResponse(answer);
 			is_response = 1;
+			
 			//wait(0.01);
 		}
 
@@ -153,7 +154,7 @@ uint8_t initSIMCOM(char *answer)
 	pc.printf("Starting SIM928\r\n");
 
 	radioEnable = 1;
-	wait(0.5);
+	wait(0.05);
 
 	while(resp != 2)
 	{
@@ -166,30 +167,36 @@ uint8_t initSIMCOM(char *answer)
 }
 
 
-void sendSerialData(const char *daatta)
+void sendSerialData(const char *daatta, uint8_t len)
 {
 
-	rfmodule.puts(daatta);
+	for (uint8_t p=0; p<len; p++)
+	{
+
+		rfmodule.putc(daatta[p]);
+	}
+	
+	rfmodule.putc(0x1a);
 	rfmodule.putc(0x0d);
+
 
 	SimcomRecPtr = 0;
 
 	timer = 0;
 	char *if_ok = 0;
 
-
-	while(timer < 5 )
+	while(timer < 15 && if_ok == NULL )
 	{
 
 		while(rfmodule.readable())
 		{
-			readATResponse(&SimcomRecBuf[0]);
+			readATResponse(&SimcomRecBuf[SimcomRecPtr]);
 			is_response = 1;
 			
 		}
 
 		//strcpy(tmpbuf,SimcomRecBuf);
-		if_ok = strstr(SimcomRecBuf,"FF");
+		if_ok = strstr(SimcomRecBuf,"SEND OK");
 	}
 
 	if(if_ok)

@@ -54,11 +54,6 @@ void initGPSTracking()
 
 		printSimcomBuffer(response);
 		
-
-
-
-		
-
 	}
 
 }
