@@ -1,6 +1,6 @@
 <!DOCTYPE html >
   <head>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=yes" />
     <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
     <title>Google Maps Geolocator 1.1a</title>
     <link rel="stylesheet" type="text/css" href="style.css" >
@@ -19,17 +19,12 @@
 
       <form id="query" method="post" action="http://139.59.155.145/XML_SQL.php">
 
-        <label>ID start</label>
+        <label><b>ID start</b></label>
         <input id="idStart" type="text" name="idStart" autocomplete="off"/>
 
-        <label>ID end</label>
+        <label><b>ID end</b></label>
         <input id="idEnd" type="text" name="idEnd" autocomplete="off"/>
 
-        <label>MySQL Username</label>
-        <input id="uname" type="text" name="uname" autocomplete="off"/>
-
-        <label>MySQL Password</label>
-        <input id="passwd" type="password" name="passwd" autocomplete="off"/>
         <input id="submitbtn" type="submit" class="button" name="submit" value="Submit">
 
         <div class="errorMsg">
@@ -40,8 +35,8 @@
         <input id="tsmaxf" name="tsmaxf" type="hidden" />
 
         <div id="time-range">
-       <p>Time Range: <span id="slidertime" name="slidertime" class="slidertime"></span> - <span id="slidertime2" name="slidertime2" class="slidertime2"></span>
-       </p>
+       <p><b>Time Range: <span id="slidertime" class="slidertime"></span> - <span id="slidertime2"  class="slidertime2"></span>
+       </b></p>
        <div class="sliders_step1">
            <div id="slider-range"></div>
        </div>
@@ -53,6 +48,10 @@
 
     <script>
 
+    $.ajax({ url: "http://139.59.155.145/xml/GMaps.xml",
+      type: "GET",
+      url: 'http://139.59.155.145/xml/GMaps.xml',
+      });
 // Määritellään globaalit muuttujat
 
   var activeInfoWindow; // Infoikkuna, joka on näkyvillä
@@ -128,15 +127,17 @@ $("#query").submit(function(event) {
 
 // Kun funktion suoritus valmis eli XML on päivitetty, kartta päivitetään
 
-          posting.done(function( data ) {
+          posting.success(function( ) {
           console.log("&lumen");
           initMap();
 
             });
-          posting.fail(function(data) {
-          console.log("&failin");
+          posting.error(function( xhr, textStatus, error) {
+          console.log(xhr.statusText);
+          console.log(textStatus);
+          console.log(error);
           initMap();
-          });
+        });
           });
 
 // AJAX:lla päivitetään GET-metodilla XML data:ssa lähetetyillä parametreillä
@@ -155,76 +156,51 @@ $("#query").submit(function(event) {
 
         function initMap() {
 
-// Luodaan karttaolio, keskitetään kartta ja asetetaan zoom sekä kartan tyyppi
-
         map = new google.maps.Map(document.getElementById('map'), {
           center: new google.maps.LatLng(64.9973158, 25.4867483),
           zoom: 18,
           mapTypeId: 'hybrid'
-
         });
 
-// idSet nollataan markkerin paikan nollaamiseksi
-
         idSet = null;
-
-// Ladataan ja luetaan XML-tiedosto
 
           downloadUrl('http://139.59.155.145/xml/GMaps.xml', function(data) {
             var xml = data.responseXML;
             var markers = xml.documentElement.getElementsByTagName('marker');
 
-// Luodaan taulukko, ja haetaan XML:sta jokaisen elementin attribuutit (ID, ts, lat, lon)
-
             Array.prototype.forEach.call(markers, function(markerElem) {
-
               var ID = markerElem.getAttribute('ID');
               var timestamp = markerElem.getAttribute('timestamp');
               var iLatitude = parseFloat(markerElem.getAttribute('latitude'));
               var iLongitude = parseFloat(markerElem.getAttribute('longitude'));
-
-// Luodaan markkeriolio ja sille sijainti (latlng)
 
               var point = new google.maps.LatLng(iLatitude, iLongitude);
 
               var marker = new google.maps.Marker({
                 map: map,
                 position: point,
-
               });
-
-// Luodaan infoikkuna ja asetetaan siihen sisältö
-
               marker['infowindow'] = new google.maps.InfoWindow({
-                content: "ID: " + ID + "<br>" + "Timestamp: " + timestamp + "<br>" + "Latitude: " + iLatitude + "<br>" + "Longitude: " + iLongitude
+                content: "ID: " + ID + "<br>" + "Timestamp: " + timestamp + "<br>"
+                + "Latitude: " + iLatitude + "<br>" + "Longitude: " + iLongitude
               });
-
-// Listener, infoikkuna avataan kun markkeria klikkaa, kartta myös keskitetään markkeriin panTo-funktiolla
-
               google.maps.event.addListener(marker, 'click', function() {
                 activeInfoWindow && activeInfoWindow.close();
                 this['infowindow'].open(map, this);
                 activeInfoWindow = this['infowindow'];
                 map.panTo(marker.getPosition());
               });
-// Tarkistetaan, onko kartta keskitetty uusimpaan markkeriin (eli korkeimmalla ID:lla olevaan markkeriin)
-// Vertailukohdaksi asetetaan ensimmäinen markkerin ID, ja siihen peilataan seuraavia, jos on isompi ID, korvataan piste sillä
 
               if ( idSet == null ) {
                 idSet = ID;
                 lastPoint = point;
               }
-
               if ( ID > idSet ) {
               lastPoint = point;
               }
-
               else {}
             });
-// Keskitetään kartta
-
             map.panTo(lastPoint);
-
           });
       }
 

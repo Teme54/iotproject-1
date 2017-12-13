@@ -1,3 +1,4 @@
+
 <?php
 //Virheilmoitukset näkyville, mikäli sellaisia on
 
@@ -11,20 +12,20 @@ try {
 // Tarkistetaan, onko POST-metodilla asetettu muuttujien username, password, idStart ja idEnd
 // Mikäli on, saadut arvot asetetaan muuttujiin, jos ei, niin asetetaan GET-metdoista saadut arvot
 
-    if (isset($_POST['uname'])) {
+    if (!empty($_POST['uname'])) {
         $username = $_POST['uname'];
         echo "Username by POST-method. ";
     } else {
-        $username = $_GET['uname'];
-        echo "Username by GET-method. ";
+        $username = "stduser";
+        echo "Default username set: " . $username . " ";
     }
 
-    if (isset($_POST['passwd'])) {
+    if (!empty($_POST['passwd'])) {
         $password = $_POST['passwd'];
         echo "Password by POST-method. ";
     } else {
-        $password = $_GET['passwd'];
-        echo "Password by GET-method. ";
+        $password = "samplepass916";
+        echo "Default password set: " . $password . " ";
     }
     if (isset($_POST['tsminf'])) {
         $tsminf = $_POST['tsminf'];
@@ -44,8 +45,6 @@ try {
     } else {
         echo "Timestamp MAX value wasn't got";
     }
-// Jos ID Start & ID End muuttujat on annettu GMaps-skriptissä, niin SQL-kyselyä muutetaan hakemaan markkerit tietyltä aikavälitä
-// Jos arvot on tyhjät, valitaan vakiona viimeiset 10 markkeria
 
     if (!empty($_POST['idStart']) && !empty($_POST['idEnd'])) {
         $idS = $_POST['idStart'];
@@ -54,7 +53,7 @@ try {
         $kysely = "SELECT * FROM locatiot WHERE ID >= '$idS' AND ID <= '$idE'";
     }
     else {
-      if ( $_POST['tsmaxf'] === null && $_POST['$tsminf'] === null ){
+      if ( $_POST['tsmaxf'] === null && $_POST['tsminf'] === null ){
           $kysely = "SELECT * FROM locatiot ORDER BY ID DESC LIMIT 10";
           echo "Query: Default, last 10 markers chosen. ";
         }
@@ -81,15 +80,11 @@ $stmt = $yhteys->query($kysely);
 echo $kysely;
 $stmt->setFetchMode(PDO::FETCH_ASSOC);
 
-// Uusi Document object model olio
-
 $doc = new DOMDocument('1.0', 'UTF-8');
 $doc->formatOutput = true;
-// Oliolle $doc kutsutaan funktiota createElement, joka luo XML-tiedostoon uuden elementin
+$doc->xmlStandalone = true;
 
 $markers = $doc->createElement('markers');
-
-// For each käy läpi jokaisen tietueen ja tekee uuden marker-elementin, sekä asettaa jokaiselle elementille attribuutin eli ominaisuuden
 
 foreach ($stmt as $row) {
     $entry = $doc->createElement('marker');
@@ -98,17 +93,17 @@ foreach ($stmt as $row) {
     $entry->setAttribute('longitude', $row['longitude']);
     $entry->setAttribute('timestamp', $row['timestamp']);
 
-    // Muutokset asetetaan voimaan jokaiseen marker-elementtiin käskyllä appendChild
-
     $markers->appendChild($entry);
 }
 
-// Muutokset asetetaan voimaan markers-elementtiin eli pääelementtiin
-
 $doc->appendChild($markers);
 
-// Set the appropriate content-type header and output the XML
-//header('Content-type: text/xml');
 header('Content-type: application/xml');
+
+try {
 echo $doc->saveXML();
 $doc->save('xml/GMaps.xml');
+}
+catch (Exception $e) {
+    die("ERROR: " . $e->getMessage());
+}
