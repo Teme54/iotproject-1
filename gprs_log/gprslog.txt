@@ -1,0 +1,12 @@
+AT+CIPSTATUSreceived from PC:
+AT+CIPSTATUS
+String sent to module
+
+received from module:
+AT+CIPSTATUS
+OK
+
+STATE: IP GPRSACT
+
+LocatIoT started
+Starting SIM928

@@ -1,0 +1,18 @@
+at+cureceived from PC:
+at+cu
+String sent to module
+
+received from module:
+at+cu
+ERROR
+
+AT+CIPSTATUSreceived from PC:
+AT+CIPSTATUS
+String sent to module
+
+received from module:
+AT+CIPSTATUS
+OK
+
+STATE: IP GPRSACT
+

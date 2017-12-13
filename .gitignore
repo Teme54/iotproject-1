@@ -1,0 +1,13 @@
+
+frdm-locat/mbed-os
+frdm-locat/BUILD
+frdm-locat/Debug
+frdm-locat/sus.json
+frdm-locat/mbed_settings.py
+frdm-locat/mbed_settings.pyc
+
+frdm_acc/mbed-os/
+frdm_acc/BUILD/
+frdm_acc/mbed_settings.py
+frdm_acc/mbed_settings.pyc
+
